@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% load render_table from django_tables2 %}
+{% block content %}
+    <div id="container">
+        <div id="left">
+            <h2>Scan new stock</h2>
+            <form method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" name="submit-stock">Save</button>
+            </form>
+            <h2>Current Stock</h2>
+            {% render_table table %}
+            <br>
+            <br>
+            <h2>Past Stock</h2>
+            {% render_table checked_out %}
+        </div>
+        <div id="right">
+            <h2>Filter Stock</h2>
+            <form method="post">
+                {% csrf_token %}
+                {{ filter_form.as_p }}
+                <button type="submit" name="submit-filter">Apply</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}

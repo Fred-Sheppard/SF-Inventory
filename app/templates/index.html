@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block content %}
+    <h1>Index</h1>
+    <h2>Boms</h2>
+    <ul>
+        {% for bom in boms %}
+            <li><a href="/bom/{{ bom.bom_id }}">{{ bom.name }}</a></li>
+        {% endfor %}
+    </ul>
+    <a href="/bom/new" class="button">New</a>
+    <h2>Projects</h2>
+    <ul>
+        {% for project in projects %}
+            <li><a href="/project/{{ project.id }}">{{ project.project_name }}</a></li>
+        {% endfor %}
+    </ul>
+    <a href="/project/new" class="button">New</a>
+    <h2>Locations</h2>
+    <ul>
+        {% for location in locations %}
+            <li><a href="/location/{{ location.id }}">{{ location.location_name }}</a></li>
+        {% endfor %}
+    </ul>
+    <a href="/location/new" class="button">New</a>
+{% endblock %}

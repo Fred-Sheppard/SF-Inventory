@@ -1,0 +1,23 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SmartFactory</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<header>
+    <div id="header-left">
+        <a href="{% url 'stock' %}">Stock</a>
+        <a href="{% url 'catalogue' %}">Catalogue</a>
+        <a href="{% url 'index' %}">Index</a>
+    </div>
+    <div id="header-right">
+        <strong>SmartFactory</strong>
+    </div>
+</header>
+<body>
+{% block content %}
+{% endblock %}
+</body>
+</html>

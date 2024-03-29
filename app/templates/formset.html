@@ -1,0 +1,32 @@
+{% block content %}
+    <form method="post">
+        {% csrf_token %}
+        {{ formset.management_form }}
+        <table>
+            <thead>
+            <tr>
+                {% for label in labels %}
+                    <th>{{ label }}</th>
+                {% endfor %}
+            </tr>
+            </thead>
+            <tbody>
+            {% for form in formset %} {% for hidden in form.hidden_fields %} {{ hidden }} {% endfor %}
+                <tr>
+                    {% for field in form.visible_fields %}
+                        <td>
+                            {{ field }}
+                            {% if field.errors %}
+                                {% for error in field.errors %}
+                                    <p style="font-size: 12px">{{ error }}</p>
+                                {% endfor %}
+                            {% endif %}
+                        </td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        <button type="submit">Save</button>
+    </form>
+{% endblock %}

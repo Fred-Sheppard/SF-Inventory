@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% load render_table from django_tables2 %}
+{% block content %}
+    <div id="container">
+        <div id="left">
+            <h1>BOM</h1>
+            <h2>{{ bom.name }}</h2>
+            {% render_table bom_table %}
+            <br>
+            <a href="{% url 'bom_edit' bom.bom_id %}" class="button">Edit</a>
+        </div>
+        <div id="right">
+            <h1>BOM Checklist</h1>
+            <ul>
+                <li>Scan part numbers to validate which parts are in stock.</li>
+                <li>Click `Regenerate Checklist` to populate the table from the BOM.</li>
+            </ul>
+            <a href="{% url 'generate_bom_checklist' bom.bom_id %}" class="button">Regenerate Checklist</a>
+            <form method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit">Save</button>
+            </form>
+            <h2>Scanned</h2>
+            {% render_table checklist_table %}
+        </div>
+    </div>
+{% endblock %}
