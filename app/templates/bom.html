@@ -11,9 +11,9 @@
         </div>
         <div id="right">
             <h1>BOM Checklist</h1>
-            <ul>
-                <li>Scan part numbers to validate which parts are in stock.</li>
+            <ul id="bom-instructions">
                 <li>Click `Regenerate Checklist` to populate the table from the BOM.</li>
+                <li>Scan part numbers to validate which parts are in stock.</li>
             </ul>
             <a href="{% url 'generate_bom_checklist' bom.bom_id %}" class="button">Regenerate Checklist</a>
             <form method="post">

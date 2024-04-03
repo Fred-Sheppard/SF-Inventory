@@ -3,10 +3,15 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('', views.catalogue),
+    path('', views.default, name='default'),
     path('index', views.index, name='index'),
+    path('register', views.register, name='register'),
+    path('login/', views.login, name='login'),
+    path('accounts/login/', views.login),
+    path('logout/', views.logout, name='logout'),
     path('stock', views.stock, name='stock'),
-    path('delete_stock/<str:part_number>', views.delete_stock, name='delete_stock'),
+    # path('delete_stock/<str:part_number>', views.delete_stock, name='delete_stock'),
+    path('checkout_stock/<int:stock_id>', views.checkout_stock, name='checkout_stock'),
     path('catalogue', views.catalogue, name='catalogue'),
     path('catalogue/new', views.catalogue_new, name='catalogue_new'),
     path('catalogue/<str:part_number>', views.catalogue_entry, name='catalogue_entry'),
@@ -19,4 +24,5 @@ urlpatterns = [
     path('location/<int:loc_id>', views.location, name='location'),
     path('project/new', views.project_new, name='project_new'),
     path('project/<int:project_id>', views.project, name='project'),
+    path('brand/<str:brand_name>', views.brand, name='brand'),
 ]

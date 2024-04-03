@@ -44,4 +44,4 @@ BomItems.objects.create(quantity=3, bom=bom2, part_number=catalogue2)
 
 # Stock
 Stock.objects.create(quantity=3, comment="Ships out 2024-01-01", location_id=1, part_number=catalogue1,
-                     project_id=1)
+                     project_id=1, modified_by='bren')

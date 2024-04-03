@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator
 from django.db import models
 
@@ -7,7 +8,8 @@ from django.db import models
 class Bom(models.Model):
     bom_id = models.AutoField(primary_key=True)
     name = models.CharField(unique=True, max_length=31)
-    date_created = models.DateField(auto_now=True)
+    date_created = models.DateTimeField(auto_now=True)
+    created_by = models.CharField(max_length=20, null=True)
 
     def __str__(self):
         return f'BOM {self.bom_id} - {self.name}'
@@ -17,6 +19,8 @@ class BomItems(models.Model):
     bom = models.ForeignKey(Bom, models.CASCADE)
     part_number = models.ForeignKey('Catalogue', models.CASCADE, db_column='part_number')
     quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
+    last_modified = models.DateTimeField(auto_now=True)
+    modified_by = models.CharField(max_length=20, null=True)
 
     def __str__(self):
         return f"BOM {self.part_number} - {self.quantity}"
@@ -36,6 +40,8 @@ class Catalogue(models.Model):
                                              validators=[MinValueValidator(Decimal('0.01'))])
     notes = models.TextField(blank=True, null=True)
     image = models.ImageField(blank=True, null=True, upload_to='images/parts')
+    last_modified = models.DateTimeField(auto_now=True)
+    modified_by = models.CharField(max_length=20, null=True)
 
     def __str__(self):
         return str(self.part_number)
@@ -50,7 +56,8 @@ class Location(models.Model):
 
 class Project(models.Model):
     project_name = models.CharField(max_length=63)
-    date_created = models.DateField(auto_now=True)
+    date_created = models.DateTimeField(auto_now=True)
+    created_by = models.CharField(max_length=20, null=True)
 
     def __str__(self):
         return self.project_name
@@ -63,8 +70,9 @@ class Stock(models.Model):
     project = models.ForeignKey(Project, models.DO_NOTHING, blank=True, null=True)
     quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     comment = models.TextField(blank=True, null=True)
-    date_added = models.DateField(auto_now=True)
     check_out = models.CharField(default='x', max_length=1, editable=False, auto_created=True)
+    last_modified = models.DateTimeField(auto_now=True)
+    modified_by = models.CharField(max_length=20, null=True)
 
     def __str__(self):
         return f"Stock {self.stock_id} - {self.part_number}. Quantity: {self.quantity}"
@@ -77,7 +85,8 @@ class CheckedOutStock(models.Model):
     project = models.ForeignKey(Project, models.DO_NOTHING, blank=True, null=True)
     quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     comment = models.TextField(blank=True, null=True)
-    date_added = models.DateField(auto_now=True)
+    last_modified = models.DateTimeField(auto_now=True)
+    modified_by = models.CharField(max_length=20, null=True)
 
     @staticmethod
     def from_stock(stock: Stock):

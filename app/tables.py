@@ -30,17 +30,18 @@ class BomChecklistTable(tables.Table):
 
 class CatalogueTable(tables.Table):
     part_number = tables.Column(linkify={"viewname": "catalogue_entry", "args": [Accessor("part_number")]})
+    brand = tables.Column(linkify={"viewname": "brand", "args": [Accessor("brand")]})
 
     class Meta:
         model = Catalogue
-        exclude = ['image']
+        exclude = ['image', 'last_modified', 'modified_by']
 
 
 class StockTable(tables.Table):
     part_number = tables.Column(linkify={"viewname": "catalogue_entry", "args": [Accessor("part_number")]})
     location = tables.Column(linkify={"viewname": "location", "args": [Accessor("location__id")]})
     project = tables.Column(linkify={"viewname": "project", "args": [Accessor("project__id")]})
-    check_out = tables.Column(linkify={"viewname": "delete_stock", "args": [Accessor("part_number")]})
+    check_out = tables.Column(linkify={"viewname": "checkout_stock", "args": [Accessor("stock_id")]})
 
     class Meta:
         model = Stock

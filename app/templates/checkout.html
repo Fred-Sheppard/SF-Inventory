@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% load render_table from django_tables2 %}
+{% block content %}
+    <h1>Check out stock entry {{ entry.stock_id }}?</h1>
+    {% render_table table %}
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <a href="{% url 'stock' %}" class="button">Cancel</a>
+        <button type="submit">Confirm</button>
+    </form>
+{% endblock %}

@@ -1,15 +1,27 @@
+import django.contrib.auth
+from django.contrib.auth import authenticate
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import AuthenticationForm
 from django.db.models import Q, QuerySet
-from django.forms import inlineformset_factory
+from django.forms import inlineformset_factory, formset_factory
+from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls.base import reverse_lazy
 
 from app.forms import StockForm, CatalogueForm, BomItemsForm, ProjectForm, LocationForm, BomForm, BomChecklistForm, \
-    StockFilterForm
+    StockFilterForm, CatalogueEditForm, UserCreateForm, CheckoutForm
 from app.models import Stock, Catalogue, Bom, BomItems, Location, Project, BomChecklist, CheckedOutStock
 from app.tables import CatalogueTable, StockTable, BomItemsTable, BomChecklistTable
 
 
 class Util:
+    @staticmethod
+    def save_with_user(request, form):
+        instance = form.save(commit=False)
+        instance.modified_by = request.user.username
+        instance.created_by = request.user.username
+        instance.save()
+
     @staticmethod
     def form_page(request, form_type, redirect_to, context=None):
         if context is None:
@@ -17,7 +29,7 @@ class Util:
         if request.method == 'POST':
             form = form_type(request.POST)
             if form.is_valid():
-                form.save()
+                Util.save_with_user(request, form)
                 return redirect(redirect_to)
         else:
             form = form_type()
@@ -32,13 +44,58 @@ class Util:
             BomChecklist(bom=item.bom, part_number=item.part_number, quantity_remaining=item.quantity).save()
 
 
+def register(request):
+    context = {
+        'heading': 'Register a new account',
+        'button_text': 'Login',
+        'button_url': '/accounts/login/'
+    }
+    return Util.form_page(request, UserCreateForm, default, context)
+
+
+def login(request):
+    if request.method == 'POST':
+        form = AuthenticationForm(data=request.POST)
+        if form.is_valid():
+            user = authenticate(request, username=form.cleaned_data['username'], password=form.cleaned_data['password'])
+            if user is not None:
+                django.contrib.auth.login(request, user)
+            next_url = request.GET.get('next')
+            if next_url:
+                return HttpResponseRedirect(next_url)
+            else:
+                return redirect(default)
+    else:
+        form = AuthenticationForm()
+    context = {
+        'heading': 'Login',
+        'button_text': 'Register',
+        'button_url': '/accounts/register',
+        'form': form,
+    }
+    return render(request, 'form.html', context)
+
+
+@login_required
+def logout(request):
+    django.contrib.auth.logout(request)
+    return redirect(login)
+
+
+@login_required
+def default(request):
+    return redirect(stock)
+
+
+@login_required
 def index(request):
-    boms = Bom.objects.all()
-    projects = Project.objects.all()
-    locations = Location.objects.all()
+    boms = Bom.objects.all().order_by('name')
+    projects = Project.objects.all().order_by('project_name')
+    locations = Location.objects.all().order_by('location_name')
     return render(request, 'index.html', {'boms': boms, 'projects': projects, 'locations': locations})
 
 
+@login_required
 def handle_stock_form(request, form):
     """Deal with the post request of the stock input form.
     The form must be valid."""
@@ -51,12 +108,15 @@ def handle_stock_form(request, form):
         entry.quantity += form.cleaned_data['quantity']
     except Stock.DoesNotExist:
         entry = form.save(commit=False)
+    entry.modified_by = request.user.username
     entry.save()
 
 
-def handle_stock_filter(request, form):
+@login_required
+def handle_stock_filter(request, form) -> str:
     """Deal with the post request of the stock filter form.
-    The form must be valid."""
+    The form must be valid.
+    Returns the filter url"""
 
     part_number = form.cleaned_data['part_number']
     location_ = Location.objects.filter(location_name=form.cleaned_data['location']).first()
@@ -72,6 +132,7 @@ def handle_stock_filter(request, form):
     return url[:-1]
 
 
+@login_required
 def filter_stock_from_parameters(request) -> QuerySet:
     part_number_ = request.GET.get('part_number')
     location_ = request.GET.get('location')
@@ -86,17 +147,20 @@ def filter_stock_from_parameters(request) -> QuerySet:
     return Stock.objects.filter(query).all()
 
 
+@login_required
 def stock(request):
     if request.method == 'POST':
         if 'submit-stock' in request.POST:
             form = StockForm(request.POST)
+            filter_form = StockFilterForm()
             if form.is_valid():
                 handle_stock_form(request, form)
                 return redirect(stock)
         elif 'submit-filter' in request.POST:
-            form = StockFilterForm(request.POST)
-            if form.is_valid():
-                url = handle_stock_filter(request, form)
+            filter_form = StockFilterForm(request.POST)
+            form = StockForm()
+            if filter_form.is_valid():
+                url = handle_stock_filter(request, filter_form)
                 return redirect(url)
         else:
             raise ValueError('Invalid button name that called this post request')
@@ -105,30 +169,60 @@ def stock(request):
         filter_form = StockFilterForm()
     # If the form being posted is not valid, it will fall through here to display errors
     stock_list = filter_stock_from_parameters(request)
-    table = StockTable(stock_list)
-    catalogue_list = Catalogue.objects.all()
-    checked_out = CheckedOutStock.objects.all()
-    return render(request, 'stock.html', {'form': form, 'table': table, 'catalogue': catalogue_list,
-                                          'checked_out': checked_out, 'filter_form': filter_form})
+    context = {
+        'form': form,
+        'filter_form': filter_form,
+        'table': StockTable(stock_list),
+        'catalogue': Catalogue.objects.all(),
+        'checked_out': CheckedOutStock.objects.all().order_by('checked_out_id').reverse()
+    }
+    return render(request, 'stock.html', context)
 
 
-def delete_stock(request, part_number):
-    stock_entry = get_object_or_404(Stock, part_number=part_number)
+@login_required
+def checkout_stock(request, stock_id):
+    entry = get_object_or_404(Stock, stock_id=stock_id)
+    if request.method == 'POST':
+        form = CheckoutForm(request.POST)
+        if form.is_valid():
+            quantity = form.cleaned_data['quantity']
+            checked_out = CheckedOutStock.from_stock(entry)
+            if quantity >= entry.quantity:
+                entry.delete()
+            else:
+                entry.quantity -= quantity
+                entry.save()
+                checked_out.quantity = quantity
+            checked_out.modified_by = request.user.username
+            checked_out.save()
+            return redirect(stock)
+    else:
+        form = CheckoutForm()
+    table = StockTable([entry], exclude=['check_out'])
+    return render(request, 'checkout.html', {'entry': entry, 'table': table, 'form': form})
+
+
+@login_required
+def delete_stock(request, stock_id):
+    stock_entry = get_object_or_404(Stock, stock_id=stock_id)
     checked_out = CheckedOutStock.from_stock(stock_entry)
     checked_out.save()
     stock_entry.delete()
     return redirect(request.META.get('HTTP_REFERER'))
 
 
+@login_required
 def catalogue(request):
     context = {
         'table': CatalogueTable(Catalogue.objects.all()),
         'button_url': '/catalogue/new',
-        'button_text': 'New Item'
+        'button_text': 'New Item',
+        'heading': 'Catalogue',
     }
     return render(request, 'table.html', context)
 
 
+@login_required
 def catalogue_new(request):
     context = {
         'heading': 'New Entry',
@@ -138,6 +232,7 @@ def catalogue_new(request):
     return Util.form_page(request, CatalogueForm, catalogue_new, context)
 
 
+@login_required
 def catalogue_entry(request, part_number):
     item = get_object_or_404(Catalogue, pk=part_number)
     entries = StockTable(Stock.objects.filter(part_number=item))
@@ -146,21 +241,23 @@ def catalogue_entry(request, part_number):
         'entries': entries,
         'heading': f'{item}',
         'button_url': f'/catalogue/edit/{item.part_number}',
-        'button_text': 'Edit'
+        'button_text': 'Edit',
+        'item': item
     }
     return render(request, 'catalogue_entry.html', context)
 
 
+@login_required
 def catalogue_edit(request, part_number):
     catalogue_item = get_object_or_404(Catalogue, pk=part_number)
 
     if request.method == 'POST':
-        form = CatalogueForm(request.POST, instance=catalogue_item)
+        form = CatalogueEditForm(request.POST, instance=catalogue_item)
         if form.is_valid():
-            form.save()
-            return redirect(catalogue)
+            Util.save_with_user(request, form)
+            return redirect(catalogue_entry, part_number)
     else:
-        form = CatalogueForm(instance=catalogue_item)
+        form = CatalogueEditForm(instance=catalogue_item)
 
     context = {
         'form': form,
@@ -171,74 +268,71 @@ def catalogue_edit(request, part_number):
     return render(request, 'form.html', context)
 
 
-def bom_edit(request, bom_id=None):
-    # TODO fix
-    boms = Bom.objects.all()
-    if bom_id is None:
-        return render(request, 'bom_default.html', {'boms': boms})
-    bom_ = get_object_or_404(Bom, bom_id=bom_id)
-    # noinspection PyPep8Naming
-    BomItemsFormSet = inlineformset_factory(Bom, BomItems, form=BomItemsForm, extra=1)
-    if request.method == 'POST':
-        formset = BomItemsFormSet(request.POST, instance=bom_)
-        if formset.is_valid():
-            instances = formset.save(commit=False)
-            for instance in instances:
-                instance.bom_id = bom_id
-                instance.save()
-            for deleted in formset.deleted_objects:
-                BomItems.delete(deleted)
-            return redirect(bom_edit, bom_id)
-    else:
-        formset = BomItemsFormSet(instance=bom_)
-    labels = ['Part Number', 'Quantity']
-    return render(request, 'bom_edit.html', {'boms': boms, 'my_bom': bom_, 'formset': formset, 'labels': labels})
-
-
+@login_required
 def location(request, loc_id):
     loc = get_object_or_404(Location, id=loc_id)
     table = StockTable(Stock.objects.filter(location=loc).all())
     return render(request, 'table.html', {'table': table, 'heading': loc.location_name})
 
 
+@login_required
 def project(request, project_id):
     project_ = get_object_or_404(Project, id=project_id)
     table = StockTable(Stock.objects.filter(project=project_).all())
     return render(request, 'table.html', {'table': table, 'heading': project_.project_name})
 
 
+@login_required
+def brand(request, brand_name):
+    table = CatalogueTable(Catalogue.objects.filter(brand=brand_name).all())
+    return render(request, 'table.html', {'table': table, 'heading': brand_name})
+
+
+@login_required
 def project_new(request):
     context = {
         'heading': 'New Project',
         'button_url': '/index',
         'button_text': 'View all Projects',
     }
-    return Util.form_page(request, ProjectForm, project_new, context)
+    return Util.form_page(request, ProjectForm, index, context)
 
 
+@login_required
 def location_new(request):
     context = {
         'heading': 'New Location',
         'button_url': '/index',
         'button_text': 'View all Locations',
     }
-    return Util.form_page(request, LocationForm, location_new, context)
+    return Util.form_page(request, LocationForm, index, context)
 
 
+@login_required
 def bom_new(request):
+    if request.method == 'POST':
+        form = BomForm(request.POST)
+        if form.is_valid():
+            Util.save_with_user(request, form)
+            return redirect(bom_edit, Bom.objects.get(name=form.cleaned_data['name']).bom_id)
+    else:
+        form = BomForm()
     context = {
         'heading': 'New Bom',
         'button_url': '/index',
         'button_text': 'View all Boms',
+        'form': form
     }
-    return Util.form_page(request, BomForm, bom_new, context)
+    return render(request, 'form.html', context)
 
 
+@login_required
 def generate_bom_checklist(request, bom_id):
     Util.generate_bom_checklist(bom_id)
     return redirect(request.META.get('HTTP_REFERER'))
 
 
+@login_required
 def bom(request, bom_id):
     bom_ = get_object_or_404(Bom, bom_id=bom_id)
     bom_table = BomItemsTable(BomItems.objects.filter(bom=bom_))
@@ -261,3 +355,28 @@ def bom(request, bom_id):
         'checklist_table': checklist_table
     }
     return render(request, 'bom.html', context)
+
+
+@login_required
+def bom_edit(request, bom_id):
+    # Todo fix form
+    bom_ = get_object_or_404(Bom, bom_id=bom_id)
+    boms = Bom.objects.all()
+    # noinspection PyPep8Naming
+    BomItemsFormSet = inlineformset_factory(Bom, BomItems, form=BomItemsForm, extra=1)
+    # BomItemsFormSet = formset_factory()
+    if request.method == 'POST':
+        formset = BomItemsFormSet(request.POST, instance=bom_)
+        if formset.is_valid():
+            instances = formset.save(commit=False)
+            for instance in instances:
+                instance.bom_id = bom_id
+                instance.modified_by = request.user.username
+                instance.save()
+            for deleted in formset.deleted_objects:
+                BomItems.delete(deleted)
+            return redirect(bom_edit, bom_id)
+    else:
+        formset = BomItemsFormSet(instance=bom_)
+    labels = ['Part Number', 'Quantity']
+    return render(request, 'bom_edit.html', {'boms': boms, 'my_bom': bom_, 'formset': formset, 'labels': labels})
