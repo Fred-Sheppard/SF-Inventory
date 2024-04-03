@@ -3,9 +3,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>SmartFactory</title>
+    <title>Inventory</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.png' %}"/>
 </head>
+<body>
 <header>
     <div id="header-left">
         <a href="{% url 'stock' %}">Stock</a>
@@ -13,11 +15,23 @@
         <a href="{% url 'index' %}">Index</a>
     </div>
     <div id="header-right">
-        <strong>SmartFactory</strong>
+        <a id="SmartFactoryText" href="{% url 'default' %}"><strong>SmartFactory</strong></a>
     </div>
 </header>
-<body>
-{% block content %}
-{% endblock %}
+    <div id="content">
+        {% block content %}
+        {% endblock %}
+    </div>
+<footer>
+    <div id="header-left">
+        <a href="/admin/">Admin</a>
+    </div>
+    <div id="header-right">
+        {% if user.username %}
+            Logged in as {{ user.username }}
+            <a href="{% url 'logout' %}">Logout</a>
+        {% endif %}
+    </div>
+</footer>
 </body>
 </html>
