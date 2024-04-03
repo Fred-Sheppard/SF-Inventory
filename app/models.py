@@ -15,7 +15,7 @@ class Bom(models.Model):
 
 class BomItems(models.Model):
     bom = models.ForeignKey(Bom, models.CASCADE)
-    part_number = models.OneToOneField('Catalogue', models.CASCADE, db_column='part_number')
+    part_number = models.ForeignKey('Catalogue', models.CASCADE, db_column='part_number')
     quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
 
     def __str__(self):
