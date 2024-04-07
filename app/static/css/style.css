@@ -17,7 +17,7 @@ a.button, button {
     color: buttontext;
     background-color: buttonface;
     text-decoration: none;
-    margin: 1px;
+    margin: 20px 0 20px 0;
 
 }
 
@@ -104,14 +104,14 @@ table {
     margin: 20px 0 20px 0;
 }
 
+#full-width-table table{
+   width: 100%;
+}
+
 th, td {
     border: 1px solid black;
-    /*text-align: center;*/
-    white-space: nowrap;
     max-width: 300px;
     min-width: 100px;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 table a, ul a {
@@ -154,4 +154,14 @@ td ul {
 
 #past-stock {
     margin-bottom: 60px;
+}
+
+#table-error p {
+    font-size: 30px;
+    width: 200px;
+}
+
+#table-row-error p {
+    font-size: 30px;
+    width: 400px;
 }

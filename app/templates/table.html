@@ -5,6 +5,8 @@
     {% if button_url is not None %}
         <a href="{{ button_url }}" class="button">{{ button_text }}</a>
     {% endif %}
-    {% render_table table %}
+    <div id="full-width-table">
+        {% render_table table %}
+    </div>
 
 {% endblock %}

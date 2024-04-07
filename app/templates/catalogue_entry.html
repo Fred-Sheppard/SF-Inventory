@@ -1,8 +1,15 @@
+{% extends 'base.html' %}
 {% load render_table from django_tables2 %}
 {% block content %}
-    {% include 'table.html' %}
+    <h1>{{ heading }}</h1>
+    <div id="full-width-table">
+        {% render_table table %}
+    </div>
+    {% if entry.url %}
+        <a href="{{ entry.url }}">View in Store</a>
+    {% endif %}
     <div id="entries-table">
-    <h2>Items in Stock</h2>
+        <h2>Items in Stock</h2>
         {% render_table entries %}
     </div>
 {% endblock %}
