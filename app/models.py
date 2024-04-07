@@ -25,13 +25,16 @@ class BomItems(models.Model):
     def __str__(self):
         return f"BOM {self.part_number} - {self.quantity}"
 
+    class Meta:
+        unique_together = ('bom', 'part_number')
+
 
 class Catalogue(models.Model):
     part_number = models.CharField(primary_key=True, max_length=63)
     brand = models.CharField(max_length=31, blank=True, null=True)
     category = models.CharField(max_length=64, blank=True, null=True)
     description = models.CharField(max_length=255, blank=True, null=True)
-    vendor_description = models.CharField(max_length=512, blank=True, null=True)
+    vendor_description = models.CharField(max_length=1024, blank=True, null=True)
     purchase_unit_cost_eur = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True,
                                                  verbose_name='Cost Price',
                                                  validators=[MinValueValidator(Decimal('0.01'))])
@@ -39,6 +42,7 @@ class Catalogue(models.Model):
                                              verbose_name='Selling Price',
                                              validators=[MinValueValidator(Decimal('0.01'))])
     notes = models.TextField(blank=True, null=True)
+    url = models.URLField(blank=True, null=True)
     image = models.ImageField(blank=True, null=True, upload_to='images/parts')
     last_modified = models.DateTimeField(auto_now=True)
     modified_by = models.CharField(max_length=20, null=True)

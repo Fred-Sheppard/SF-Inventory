@@ -1,7 +1,8 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from django.core.validators import MinValueValidator
+from django.core.exceptions import NON_FIELD_ERRORS
+from django.core.validators import MinValueValidator, ValidationError
 from django.utils.text import slugify
 
 from app.models import Stock, Catalogue, BomItems, Project, Location, Bom, BomChecklist
@@ -49,12 +50,49 @@ class BomForm(forms.ModelForm):
 class BomItemsForm(forms.ModelForm):
     part_number = forms.CharField(label='Part Number')
 
+    def __init__(self, *args, bom_id, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.bom_id = bom_id
+
     def clean_part_number(self):
-        return Util.clean_part_number(self.cleaned_data['part_number'])
+        pn = Util.clean_part_number(self.cleaned_data['part_number'])
+        return pn
+
+    def save(self, commit=True):
+        instance = super(BomItemsForm, self).save(commit=False)
+        instance.bom_id = self.bom_id
+        if commit:
+            instance.save()
+        return instance
 
     class Meta:
         model = BomItems
         fields = ['id', 'part_number', 'quantity']
+        error_messages = {
+            NON_FIELD_ERRORS: {
+                'unique_together': "Part Number already exists in BOM."
+            }
+        }
+
+
+class BomItemsFormset(forms.BaseInlineFormSet):
+    def clean(self):
+        super(BomItemsFormset, self).clean()
+        if any(self.errors):
+            # Don't bother validating the formset unless each form is valid on its own
+            return
+        part_numbers = set()
+        for form in self.forms:
+            # noinspection PyUnresolvedReferences
+            if self.can_delete and self._should_delete_form(form):
+                continue
+            try:
+                part_number = form.cleaned_data['part_number']
+            except KeyError:
+                continue
+            if part_number in part_numbers:
+                raise ValidationError(f"Part Number already exists in BOM: {part_number}")
+            part_numbers.add(part_number)
 
 
 class CatalogueEditForm(forms.ModelForm):

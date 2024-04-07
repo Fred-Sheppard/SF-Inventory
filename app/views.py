@@ -3,13 +3,13 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.db.models import Q, QuerySet
-from django.forms import inlineformset_factory, formset_factory
+from django.forms import inlineformset_factory
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls.base import reverse_lazy
 
 from app.forms import StockForm, CatalogueForm, BomItemsForm, ProjectForm, LocationForm, BomForm, BomChecklistForm, \
-    StockFilterForm, CatalogueEditForm, UserCreateForm, CheckoutForm
+    StockFilterForm, CatalogueEditForm, UserCreateForm, CheckoutForm, BomItemsFormset
 from app.models import Stock, Catalogue, Bom, BomItems, Location, Project, BomChecklist, CheckedOutStock
 from app.tables import CatalogueTable, StockTable, BomItemsTable, BomChecklistTable
 
@@ -214,7 +214,7 @@ def delete_stock(request, stock_id):
 @login_required
 def catalogue(request):
     context = {
-        'table': CatalogueTable(Catalogue.objects.all()),
+        'table': CatalogueTable(Catalogue.objects.all(), order_by=('brand', 'part_number')),
         'button_url': '/catalogue/new',
         'button_text': 'New Item',
         'heading': 'Catalogue',
@@ -234,15 +234,15 @@ def catalogue_new(request):
 
 @login_required
 def catalogue_entry(request, part_number):
-    item = get_object_or_404(Catalogue, pk=part_number)
-    entries = StockTable(Stock.objects.filter(part_number=item))
+    entry = get_object_or_404(Catalogue, pk=part_number)
+    entries = StockTable(Stock.objects.filter(part_number=entry))
     context = {
-        'table': CatalogueTable([item]),
+        'table': CatalogueTable([entry]),
         'entries': entries,
-        'heading': f'{item}',
-        'button_url': f'/catalogue/edit/{item.part_number}',
+        'heading': f'{entry}',
+        'button_url': f'/catalogue/edit/{entry.part_number}',
         'button_text': 'Edit',
-        'item': item
+        'entry': entry
     }
     return render(request, 'catalogue_entry.html', context)
 
@@ -359,24 +359,16 @@ def bom(request, bom_id):
 
 @login_required
 def bom_edit(request, bom_id):
-    # Todo fix form
     bom_ = get_object_or_404(Bom, bom_id=bom_id)
     boms = Bom.objects.all()
     # noinspection PyPep8Naming
-    BomItemsFormSet = inlineformset_factory(Bom, BomItems, form=BomItemsForm, extra=1)
-    # BomItemsFormSet = formset_factory()
+    MyFormSet = inlineformset_factory(Bom, BomItems, form=BomItemsForm, formset=BomItemsFormset, extra=1)
     if request.method == 'POST':
-        formset = BomItemsFormSet(request.POST, instance=bom_)
+        formset = MyFormSet(request.POST, instance=bom_, form_kwargs={'bom_id': bom_id})
         if formset.is_valid():
-            instances = formset.save(commit=False)
-            for instance in instances:
-                instance.bom_id = bom_id
-                instance.modified_by = request.user.username
-                instance.save()
-            for deleted in formset.deleted_objects:
-                BomItems.delete(deleted)
+            formset.save()
             return redirect(bom_edit, bom_id)
     else:
-        formset = BomItemsFormSet(instance=bom_)
+        formset = MyFormSet(instance=bom_, form_kwargs={'bom_id': bom_id})
     labels = ['Part Number', 'Quantity']
     return render(request, 'bom_edit.html', {'boms': boms, 'my_bom': bom_, 'formset': formset, 'labels': labels})
