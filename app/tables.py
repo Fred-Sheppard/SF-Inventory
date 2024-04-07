@@ -34,7 +34,7 @@ class CatalogueTable(tables.Table):
 
     class Meta:
         model = Catalogue
-        exclude = ['image', 'last_modified', 'modified_by']
+        exclude = ['image', 'last_modified', 'modified_by', 'url']
 
 
 class StockTable(tables.Table):
