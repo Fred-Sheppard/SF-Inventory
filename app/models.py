@@ -29,19 +29,27 @@ class BomItems(models.Model):
         unique_together = ('bom', 'part_number')
 
 
+class Brand(models.Model):
+    brand_id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=31)
+
+    def __str__(self):
+        return self.name
+
+
 class Catalogue(models.Model):
     part_number = models.CharField(primary_key=True, max_length=63)
-    brand = models.CharField(max_length=31, blank=True, null=True)
+    brand = models.ForeignKey(Brand, on_delete=models.CASCADE, default='Empty')
     category = models.CharField(max_length=64, blank=True, null=True)
     description = models.CharField(max_length=255, blank=True, null=True)
-    vendor_description = models.CharField(max_length=1024, blank=True, null=True)
+    vendor_description = models.CharField(max_length=1023, blank=True, null=True)
     purchase_unit_cost_eur = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True,
                                                  verbose_name='Cost Price',
                                                  validators=[MinValueValidator(Decimal('0.01'))])
     sale_unit_cost_eur = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True,
                                              verbose_name='Selling Price',
                                              validators=[MinValueValidator(Decimal('0.01'))])
-    notes = models.TextField(blank=True, null=True)
+    notes = models.CharField(max_length=1023, blank=True, null=True)
     url = models.URLField(blank=True, null=True)
     image = models.ImageField(blank=True, null=True, upload_to='images/parts')
     last_modified = models.DateTimeField(auto_now=True)
@@ -75,6 +83,7 @@ class Stock(models.Model):
     quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     comment = models.TextField(blank=True, null=True)
     check_out = models.CharField(default='x', max_length=1, editable=False, auto_created=True)
+    created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
     modified_by = models.CharField(max_length=20, null=True)
 

@@ -1,4 +1,6 @@
 #!/bin/bash
+echo Flushing Database
+python manage.py flush --noinput
 echo 'Reverting migrations'
 python manage.py migrate app zero
 echo 'Deleting old migrations'
@@ -8,5 +10,8 @@ echo 'Running makemigrations'
 python manage.py makemigrations
 echo "Migrating models"
 python manage.py migrate
-echo "Entering sample data"
-python manage.py shell < scripts/sample_data.py
+echo Populating Catalogue
+python manage.py shell < populate/catalogue.py
+echo Creating Admin Account
+python manage.py createsuperuser
+echo Done

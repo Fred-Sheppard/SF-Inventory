@@ -12,6 +12,8 @@ ENV PYTHONUNBUFFERED 1
 COPY ./requirements.txt .
 RUN pip install -r requirements.txt
 
+RUN apt update && apt install postgresql -y
+
 # copy project
 COPY . .
 RUN chmod +x entrypoint.sh
