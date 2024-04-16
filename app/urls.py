@@ -21,7 +21,5 @@ urlpatterns = [
     path('generate_bom_checklist/<int:bom_id>', views.generate_bom_checklist, name='generate_bom_checklist'),
     path('location/new', views.location_new, name='location_new'),
     path('location/<int:loc_id>', views.location, name='location'),
-    path('project/new', views.project_new, name='project_new'),
-    path('project/<int:project_id>', views.project, name='project'),
     path('brand/<int:brand_id>', views.brand, name='brand'),
 ]

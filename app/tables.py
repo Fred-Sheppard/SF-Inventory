@@ -40,7 +40,6 @@ class CatalogueTable(tables.Table):
 class StockTable(tables.Table):
     part_number = tables.Column(linkify={"viewname": "catalogue_entry", "args": [Accessor("part_number")]})
     location = tables.Column(linkify={"viewname": "location", "args": [Accessor("location__id")]})
-    project = tables.Column(linkify={"viewname": "project", "args": [Accessor("project__id")]})
     check_out = tables.Column(linkify={"viewname": "checkout_stock", "args": [Accessor("stock_id")]})
 
     class Meta:

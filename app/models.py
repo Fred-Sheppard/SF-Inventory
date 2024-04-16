@@ -66,20 +66,10 @@ class Location(models.Model):
         return self.location_name
 
 
-class Project(models.Model):
-    project_name = models.CharField(max_length=63)
-    date_created = models.DateTimeField(auto_now=True)
-    created_by = models.CharField(max_length=20, null=True)
-
-    def __str__(self):
-        return self.project_name
-
-
 class Stock(models.Model):
     stock_id = models.AutoField(primary_key=True)
     part_number = models.ForeignKey(Catalogue, models.CASCADE, db_column='part_number')
-    location = models.ForeignKey(Location, models.DO_NOTHING)
-    project = models.ForeignKey(Project, models.DO_NOTHING, blank=True, null=True)
+    location = models.ForeignKey(Location, models.DO_NOTHING, verbose_name='Location/Project')
     quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     comment = models.TextField(blank=True, null=True)
     check_out = models.CharField(default='x', max_length=1, editable=False, auto_created=True)
@@ -95,7 +85,6 @@ class CheckedOutStock(models.Model):
     checked_out_id = models.AutoField(primary_key=True, verbose_name='ID')
     part_number = models.ForeignKey(Catalogue, models.CASCADE, db_column='part_number')
     location = models.ForeignKey(Location, models.DO_NOTHING)
-    project = models.ForeignKey(Project, models.DO_NOTHING, blank=True, null=True)
     quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     comment = models.TextField(blank=True, null=True)
     last_modified = models.DateTimeField(auto_now=True)
@@ -106,7 +95,6 @@ class CheckedOutStock(models.Model):
         return CheckedOutStock(
             part_number=stock.part_number,
             location=stock.location,
-            project=stock.project,
             quantity=stock.quantity,
             comment=stock.comment,
         )

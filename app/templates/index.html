@@ -8,13 +8,6 @@
         {% endfor %}
     </ul>
     <a href="/bom/new" class="button">New</a>
-    <h2>Projects</h2>
-    <ul>
-        {% for project in projects %}
-            <li><a href="/project/{{ project.id }}">{{ project.project_name }}</a></li>
-        {% endfor %}
-    </ul>
-    <a href="/project/new" class="button">New</a>
     <h2>Locations</h2>
     <ul>
         {% for location in locations %}
