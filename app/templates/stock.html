@@ -11,12 +11,12 @@
                 <button type="submit" name="submit-stock">Save</button>
             </form>
             <h2>Current Stock</h2>
-            {% timezone 'Europe/Dublin'%}
+            {% timezone 'Europe/Dublin' %}
                 {% render_table table %}
             {% endtimezone %}
             <h2>Past Stock</h2>
             <div id="past-stock">
-                {% timezone 'Europe/Dublin'%}
+                {% timezone 'Europe/Dublin' %}
                     {% render_table checked_out %}
                 {% endtimezone %}
             </div>

@@ -97,7 +97,12 @@ footer * {
 }
 
 textarea {
-    height: 20px;
+    height: 50px;
+    overflow: auto;
+}
+
+#id_url {
+   width: 400px;
 }
 
 table {
@@ -108,11 +113,16 @@ table {
    width: 100%;
 }
 
+#full-width-table table th{
+    font-size: 20px;
+}
+
 th, td {
     border: 1px solid black;
     max-width: 300px;
     min-width: 100px;
 }
+
 
 table a, ul a {
     text-decoration: none;
@@ -157,11 +167,11 @@ td ul {
 }
 
 #table-error p {
-    font-size: 30px;
+    font-size: 15px;
     width: 200px;
 }
 
 #table-row-error p {
-    font-size: 30px;
+    font-size: 15px;
     width: 400px;
 }

@@ -1,9 +1,10 @@
+import re
+
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.core.exceptions import NON_FIELD_ERRORS
 from django.core.validators import MinValueValidator, ValidationError
-from django.utils.text import slugify
 
 from app.models import Stock, Catalogue, BomItems, Project, Location, Bom, BomChecklist
 
@@ -11,9 +12,17 @@ from app.models import Stock, Catalogue, BomItems, Project, Location, Bom, BomCh
 class Util:
     @staticmethod
     def clean_part_number(part_number: str):
+        part_number = part_number.strip()
         # Account for Siemens barcodes
         if part_number.startswith('1p'):
             part_number = part_number[2:]
+        # Replace whitespace and slashes with underscores
+        part_number = re.sub(r'\s|/', '_', part_number)
+        return part_number
+
+    @staticmethod
+    def validate_part_number(part_number: str):
+        part_number = Util.clean_part_number(part_number)
         try:
             entry = Catalogue.objects.get(part_number=part_number)
         except Catalogue.DoesNotExist:
@@ -32,7 +41,7 @@ class BomChecklistForm(forms.Form):
         super(BomChecklistForm, self).__init__(*args, **kwargs)
 
     def clean_part_number(self):
-        part_number = self.cleaned_data['part_number']
+        part_number = Util.clean_part_number(self.cleaned_data['part_number'])
         if not BomChecklist.objects.filter(bom_id=self.bom_id, part_number=part_number).exists():
             raise forms.ValidationError('Part number not found in BOM')
         quantity_remaining = BomChecklist.objects.get(bom_id=self.bom_id, part_number=part_number).quantity_remaining
@@ -55,7 +64,7 @@ class BomItemsForm(forms.ModelForm):
         self.bom_id = bom_id
 
     def clean_part_number(self):
-        pn = Util.clean_part_number(self.cleaned_data['part_number'])
+        pn = Util.validate_part_number(self.cleaned_data['part_number'])
         return pn
 
     def save(self, commit=True):
@@ -103,15 +112,7 @@ class CatalogueEditForm(forms.ModelForm):
 
 class CatalogueForm(forms.ModelForm):
     def clean_part_number(self):
-        part_number = self.cleaned_data['part_number']
-        # Remove the leading 1p for Siemens barcodes
-        if part_number.startswith('1p'):
-            part_number = part_number[2:]
-        return part_number
-
-    def clean_brand(self):
-        brand = self.cleaned_data['brand']
-        return slugify(brand)
+        return Util.clean_part_number(self.cleaned_data['part_number'])
 
     class Meta:
         model = Catalogue
@@ -154,7 +155,7 @@ class StockForm(forms.ModelForm):
     quantity = forms.IntegerField(initial=1, required=True, validators=[MinValueValidator(1)])
 
     def clean_part_number(self):
-        return Util.clean_part_number(self.cleaned_data['part_number'])
+        return Util.validate_part_number(self.cleaned_data['part_number'])
 
     class Meta:
         model = Stock

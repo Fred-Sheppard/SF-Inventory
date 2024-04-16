@@ -30,7 +30,7 @@ class BomChecklistTable(tables.Table):
 
 class CatalogueTable(tables.Table):
     part_number = tables.Column(linkify={"viewname": "catalogue_entry", "args": [Accessor("part_number")]})
-    brand = tables.Column(linkify={"viewname": "brand", "args": [Accessor("brand")]})
+    brand = tables.Column(linkify={"viewname": "brand", "args": [Accessor("brand__brand_id")]})
 
     class Meta:
         model = Catalogue

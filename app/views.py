@@ -10,7 +10,7 @@ from django.urls.base import reverse_lazy
 
 from app.forms import StockForm, CatalogueForm, BomItemsForm, ProjectForm, LocationForm, BomForm, BomChecklistForm, \
     StockFilterForm, CatalogueEditForm, UserCreateForm, CheckoutForm, BomItemsFormset
-from app.models import Stock, Catalogue, Bom, BomItems, Location, Project, BomChecklist, CheckedOutStock
+from app.models import Stock, Catalogue, Bom, BomItems, Location, Project, BomChecklist, CheckedOutStock, Brand
 from app.tables import CatalogueTable, StockTable, BomItemsTable, BomChecklistTable
 
 
@@ -70,7 +70,7 @@ def login(request):
     context = {
         'heading': 'Login',
         'button_text': 'Register',
-        'button_url': '/accounts/register',
+        'button_url': '/register',
         'form': form,
     }
     return render(request, 'form.html', context)
@@ -283,9 +283,10 @@ def project(request, project_id):
 
 
 @login_required
-def brand(request, brand_name):
-    table = CatalogueTable(Catalogue.objects.filter(brand=brand_name).all())
-    return render(request, 'table.html', {'table': table, 'heading': brand_name})
+def brand(request, brand_id):
+    brand_ = get_object_or_404(Brand, brand_id=brand_id)
+    table = CatalogueTable(Catalogue.objects.filter(brand=brand_).all(), order_by='part_number')
+    return render(request, 'table.html', {'table': table, 'heading': brand_.name})
 
 
 @login_required
@@ -370,5 +371,6 @@ def bom_edit(request, bom_id):
             return redirect(bom_edit, bom_id)
     else:
         formset = MyFormSet(instance=bom_, form_kwargs={'bom_id': bom_id})
+        print(formset.as_table())
     labels = ['Part Number', 'Quantity']
     return render(request, 'bom_edit.html', {'boms': boms, 'my_bom': bom_, 'formset': formset, 'labels': labels})
