@@ -8,9 +8,9 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls.base import reverse_lazy
 
-from app.forms import StockForm, CatalogueForm, BomItemsForm, ProjectForm, LocationForm, BomForm, BomChecklistForm, \
+from app.forms import StockForm, CatalogueForm, BomItemsForm, LocationForm, BomForm, BomChecklistForm, \
     StockFilterForm, CatalogueEditForm, UserCreateForm, CheckoutForm, BomItemsFormset
-from app.models import Stock, Catalogue, Bom, BomItems, Location, Project, BomChecklist, CheckedOutStock, Brand
+from app.models import Stock, Catalogue, Bom, BomItems, Location, BomChecklist, CheckedOutStock, Brand
 from app.tables import CatalogueTable, StockTable, BomItemsTable, BomChecklistTable
 
 
@@ -90,9 +90,8 @@ def default(request):
 @login_required
 def index(request):
     boms = Bom.objects.all().order_by('name')
-    projects = Project.objects.all().order_by('project_name')
     locations = Location.objects.all().order_by('location_name')
-    return render(request, 'index.html', {'boms': boms, 'projects': projects, 'locations': locations})
+    return render(request, 'index.html', {'boms': boms, 'locations': locations})
 
 
 @login_required
@@ -103,7 +102,6 @@ def handle_stock_form(request, form):
         entry = Stock.objects.get(
             part_number=form.cleaned_data['part_number'],
             location=form.cleaned_data['location'],
-            project=form.cleaned_data['project']
         )
         entry.quantity += form.cleaned_data['quantity']
     except Stock.DoesNotExist:
@@ -120,14 +118,11 @@ def handle_stock_filter(request, form) -> str:
 
     part_number = form.cleaned_data['part_number']
     location_ = Location.objects.filter(location_name=form.cleaned_data['location']).first()
-    project_ = Project.objects.filter(project_name=form.cleaned_data['project']).first()
     url = reverse_lazy('stock') + '?'
     if part_number is not None:
         url += f'part_number={part_number}&'
     if location_:
         url += f'location={location_.id}&'
-    if project_:
-        url += f'project={project_.id}&'
     # Remove the final &
     return url[:-1]
 
@@ -136,14 +131,11 @@ def handle_stock_filter(request, form) -> str:
 def filter_stock_from_parameters(request) -> QuerySet:
     part_number_ = request.GET.get('part_number')
     location_ = request.GET.get('location')
-    project_ = request.GET.get('project')
     query = Q()
     if part_number_:
         query &= Q(part_number=part_number_)
     if location_:
         query &= Q(location=location_)
-    if project_:
-        query &= Q(project=project_)
     return Stock.objects.filter(query).all()
 
 
@@ -276,27 +268,10 @@ def location(request, loc_id):
 
 
 @login_required
-def project(request, project_id):
-    project_ = get_object_or_404(Project, id=project_id)
-    table = StockTable(Stock.objects.filter(project=project_).all())
-    return render(request, 'table.html', {'table': table, 'heading': project_.project_name})
-
-
-@login_required
 def brand(request, brand_id):
     brand_ = get_object_or_404(Brand, brand_id=brand_id)
     table = CatalogueTable(Catalogue.objects.filter(brand=brand_).all(), order_by='part_number')
     return render(request, 'table.html', {'table': table, 'heading': brand_.name})
-
-
-@login_required
-def project_new(request):
-    context = {
-        'heading': 'New Project',
-        'button_url': '/index',
-        'button_text': 'View all Projects',
-    }
-    return Util.form_page(request, ProjectForm, index, context)
 
 
 @login_required

@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import NON_FIELD_ERRORS
 from django.core.validators import MinValueValidator, ValidationError
 
-from app.models import Stock, Catalogue, BomItems, Project, Location, Bom, BomChecklist
+from app.models import Stock, Catalogue, BomItems, Location, Bom, BomChecklist
 
 
 class Util:
@@ -135,19 +135,11 @@ class LoginForm(forms.ModelForm):
         fields = ['first_name', 'last_name', 'username', 'password']
 
 
-class ProjectForm(forms.ModelForm):
-    class Meta:
-        model = Project
-        fields = ['id', 'project_name']
-
-
 class StockFilterForm(forms.Form):
     part_number = forms.ModelChoiceField(queryset=Catalogue.objects.filter(stock__isnull=False).distinct('pk'),
                                          required=False)
     location = forms.ModelChoiceField(queryset=Location.objects.filter(stock__isnull=False).distinct('pk'),
                                       required=False)
-    project = forms.ModelChoiceField(queryset=Project.objects.filter(stock__isnull=False).distinct('pk'),
-                                     required=False)
 
 
 class StockForm(forms.ModelForm):
