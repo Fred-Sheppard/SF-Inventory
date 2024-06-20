@@ -6,7 +6,7 @@ from django.db.models import Q, QuerySet
 from django.forms import inlineformset_factory
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect, get_object_or_404
-from django.urls.base import reverse_lazy
+from django.urls.base import reverse_lazy, reverse
 
 from app.forms import StockForm, CatalogueForm, BomItemsForm, LocationForm, BomForm, BomChecklistForm, \
     StockFilterForm, CatalogueEditForm, UserCreateForm, CheckoutForm, BomItemsFormset
@@ -157,7 +157,8 @@ def stock(request):
         else:
             raise ValueError('Invalid button name that called this post request')
     else:
-        form = StockForm()
+        part_number = request.GET.get('part_number')
+        form = StockForm(initial={'part_number': part_number})
         filter_form = StockFilterForm()
     # If the form being posted is not valid, it will fall through here to display errors
     stock_list = filter_stock_from_parameters(request)
@@ -216,12 +217,26 @@ def catalogue(request):
 
 @login_required
 def catalogue_new(request):
+    if request.method == 'POST':
+        form = CatalogueForm(request.POST, )
+        if form.is_valid():
+            Util.save_with_user(request, form)
+            if form.cleaned_data['scanToStock']:
+                part_number = form.cleaned_data['part_number']
+                url = f"{reverse('stock')}?part_number={part_number}"
+                return HttpResponseRedirect(url)
+            else:
+                return redirect(catalogue_new)
+    else:
+        part_number = request.GET.get('part_number')
+        form = CatalogueForm(initial={'part_number': part_number})
     context = {
         'heading': 'New Entry',
         'button_url': '/catalogue',
-        'button_text': 'Back to Catalogue'
+        'button_text': 'Back to Catalogue',
+        'form': form
     }
-    return Util.form_page(request, CatalogueForm, catalogue_new, context)
+    return render(request, 'form.html', context)
 
 
 @login_required

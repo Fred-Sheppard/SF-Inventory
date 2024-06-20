@@ -5,6 +5,8 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.core.exceptions import NON_FIELD_ERRORS
 from django.core.validators import MinValueValidator, ValidationError
+from django.urls import reverse
+from django.utils.html import format_html
 
 from app.models import Stock, Catalogue, BomItems, Location, Bom, BomChecklist
 
@@ -111,6 +113,12 @@ class CatalogueEditForm(forms.ModelForm):
 
 
 class CatalogueForm(forms.ModelForm):
+    scanToStock = forms.BooleanField(
+        label="Scan to Stock?",
+        required=False,
+        widget=forms.CheckboxInput(attrs={'title': 'Click to redirect to the stock page on save.'})
+    )
+
     def clean_part_number(self):
         return Util.clean_part_number(self.cleaned_data['part_number'])
 
@@ -147,7 +155,18 @@ class StockForm(forms.ModelForm):
     quantity = forms.IntegerField(initial=1, required=True, validators=[MinValueValidator(1)])
 
     def clean_part_number(self):
-        return Util.validate_part_number(self.cleaned_data['part_number'])
+        part_number = self.cleaned_data.get('part_number')
+        if not Catalogue.objects.filter(part_number=part_number).exists():
+            url = reverse('catalogue_new') + f"?part_number={part_number}"
+            raise ValidationError(
+                format_html(
+                    'Part number does not exist. <a href="{}" style="text-decoration: underline">Create</a>',
+                    url)
+            )
+        return Util.validate_part_number(part_number)
+
+    # def clean_part_number(self):
+    #     return Util.validate_part_number(self.cleaned_data['part_number'])
 
     class Meta:
         model = Stock
