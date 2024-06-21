@@ -1,4 +1,4 @@
-name: Run tests and push to Docker Hub
+name: CI and Docker Hub
 
 on:
   push:
@@ -17,7 +17,6 @@ jobs:
       max-parallel: 4
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
-
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
@@ -46,9 +45,21 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Build and push
+      - name: Build and push with version and latest tag
+        id: docker_build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPO_NAME }}:${{ github.ref_name }}
+            ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPO_NAME }}:latest
+        if: startsWith(github.ref_name, 'v') && contains(github.ref_name, '.')  # Add latest tag if the tag matches v*.*.*
+      - name: Build and push with version tag only
+        id: docker_build_version_only
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPO_NAME }}:${{ github.ref_name }}
+        if: "!startsWith(github.ref_name, 'v') || !contains(github.ref_name, '.')"
