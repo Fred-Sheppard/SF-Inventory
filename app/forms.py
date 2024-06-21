@@ -144,10 +144,8 @@ class LoginForm(forms.ModelForm):
 
 
 class StockFilterForm(forms.Form):
-    part_number = forms.ModelChoiceField(queryset=Catalogue.objects.filter(stock__isnull=False).distinct('pk'),
-                                         required=False)
-    location = forms.ModelChoiceField(queryset=Location.objects.filter(stock__isnull=False).distinct('pk'),
-                                      required=False)
+    part_number = forms.ModelChoiceField(queryset=Catalogue.objects.filter(stock__isnull=False), required=False)
+    location = forms.ModelChoiceField(queryset=Location.objects.filter(stock__isnull=False), required=False)
 
 
 class StockForm(forms.ModelForm):
