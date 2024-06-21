@@ -82,6 +82,12 @@ class ViewTests(TestCase):
         self.assertTemplateUsed(response, 'form.html')
         self.assertContains(response, "New Entry")
 
+    def test_catalogue_new_with_part_number(self):
+        response = self.client.get(reverse('catalogue_new') + "?part_number=123")
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'form.html')
+        self.assertContains(response, "123")
+
     def test_catalogue_entry_view(self):
         response = self.client.get(reverse('catalogue_entry', args=["12345"]))
         self.assertEqual(response.status_code, 200)
