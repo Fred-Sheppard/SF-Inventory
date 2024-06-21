@@ -27,4 +27,4 @@ jobs:
         pip install -r requirements.txt
     - name: Run Tests
       run: |
-        python manage.py test
+        DJANGO_SETTINGS_MODULE=Inventory.settings-test python manage.py test
