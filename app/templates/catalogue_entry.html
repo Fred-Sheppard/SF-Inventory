@@ -2,15 +2,28 @@
 {% load render_table from django_tables2 %}
 {% block content %}
     <h1>{{ heading }}</h1>
-    {% if button_url is not None %}
-        <a href="{{ button_url }}" class="button">{{ button_text }}</a>
-    {% endif %}
+    <a href="/catalogue/edit/{{ entry.part_number }}" class="button">Edit</a>
+
     <div id="full-width-table">
         {% render_table table %}
     </div>
     {% if entry.url %}
         <a href="{{ entry.url }}">View in Store</a>
     {% endif %}
+
+    <h2>Trackers</h2>
+    {% if not trackers %}
+        <a href="{% url 'tracker_new' %}?part_number={{ entry.part_number }}&redirect={{ request.path }}"
+           class="button">Create Tracker</a>
+    {% else %}
+        <ul>
+            {% for tracker in trackers %}
+                <li><a href="/tracker/{{ tracker.id }}?redirect={{ request.path }}">{{ tracker.part_number }}
+                    &lt; {{ tracker.quantity }}</a></li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
     <div id="entries-table">
         <h2>Items in Stock</h2>
         {% render_table entries %}

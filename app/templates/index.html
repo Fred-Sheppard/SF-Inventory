@@ -15,4 +15,12 @@
         {% endfor %}
     </ul>
     <a href="/location/new" class="button">New</a>
+    <h2>Trackers</h2>
+    <ul>
+        {% for tracker in stock_trackers %}
+            <li><a href="/tracker/{{ tracker.id }}">{{ tracker.part_number }} &lt; {{ tracker.quantity }}</a></li>
+        {% endfor %}
+    </ul>
+    <a href="/tracker/new" class="button">New</a>
+
 {% endblock %}

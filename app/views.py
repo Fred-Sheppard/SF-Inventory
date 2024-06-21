@@ -96,7 +96,9 @@ def default(request):
 def index(request):
     boms = Bom.objects.all().order_by('name')
     locations = Location.objects.all().order_by('location_name')
-    return render(request, 'index.html', {'boms': boms, 'locations': locations})
+    stock_trackers = Tracker.objects.all().order_by('part_number')
+    return render(request, 'index.html', {'boms': boms, 'locations': locations,
+                                          'stock_trackers': stock_trackers})
 
 
 @login_required
@@ -249,13 +251,13 @@ def catalogue_new(request):
 def catalogue_entry(request, part_number):
     entry = get_object_or_404(Catalogue, pk=part_number)
     entries = StockTable(Stock.objects.filter(part_number=entry))
+    trackers = Tracker.objects.filter(part_number=part_number)
     context = {
         'table': CatalogueTable([entry]),
         'entries': entries,
         'heading': f'{entry}',
-        'button_url': f'/catalogue/edit/{entry.part_number}',
-        'button_text': 'Edit',
-        'entry': entry
+        'entry': entry,
+        'trackers': trackers,
     }
     return render(request, 'catalogue_entry.html', context)
 
@@ -278,6 +280,36 @@ def location(request, loc_id):
     loc = get_object_or_404(Location, id=loc_id)
     table = StockTable(Stock.objects.filter(location=loc).all())
     return render(request, 'table.html', {'table': table, 'heading': loc.location_name})
+
+
+@login_required
+def tracker_new(request):
+    part_number = request.GET.get('part_number')
+    url = request.GET.get('redirect')
+    if url is None:
+        url = index
+
+    context = {
+        'heading': 'Create a new Tracker',
+        'button_text': 'View all Trackers',
+        'button_url': '/index'
+    }
+    return Util.form_page(request, TrackerForm, url, context=context, initial={'part_number': part_number})
+
+
+@login_required
+def tracker_edit(request, tracker_id):
+    _tracker = get_object_or_404(Tracker, id=tracker_id)
+    url = request.GET.get('redirect')
+    if url is None:
+        url = index
+
+    context = {
+        'heading': f'Editing Tracker',
+        'button_text': 'View Part',
+        'button_url': f'/catalogue/{_tracker.part_number}',
+    }
+    return Util.form_page(request, TrackerForm, url, context=context, instance=_tracker)
 
 
 @login_required

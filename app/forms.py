@@ -8,7 +8,7 @@ from django.core.validators import MinValueValidator, ValidationError
 from django.urls import reverse
 from django.utils.html import format_html
 
-from app.models import Stock, Catalogue, BomItems, Location, Bom, BomChecklist
+from app.models import Stock, Catalogue, BomItems, Location, Bom, BomChecklist, Tracker
 
 
 class Util:
@@ -171,6 +171,17 @@ class StockForm(forms.ModelForm):
     class Meta:
         model = Stock
         exclude = ['modified_by']
+
+
+class TrackerForm(forms.ModelForm):
+    part_number = forms.CharField()
+
+    def clean_part_number(self):
+        return Util.validate_part_number(self.cleaned_data['part_number'])
+
+    class Meta:
+        model = Tracker
+        fields = ['part_number', 'quantity']
 
 
 class UserCreateForm(UserCreationForm):

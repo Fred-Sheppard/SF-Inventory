@@ -81,6 +81,19 @@ class Stock(models.Model):
         return f"Stock {self.stock_id} - {self.part_number}. Quantity: {self.quantity}"
 
 
+# Multiple trackers can exist for a part number at different quantities
+class Tracker(models.Model):
+    part_number = models.ForeignKey(Catalogue, models.CASCADE, db_column='part_number')
+    quantity = models.PositiveIntegerField(default=0)
+    last_notification = models.DateTimeField(null=True)
+
+    class Meta:
+        unique_together = ('part_number', 'quantity')
+
+    def __str__(self):
+        return f"Tracker: {self.part_number} @ < {self.quantity} items."
+
+
 class CheckedOutStock(models.Model):
     checked_out_id = models.AutoField(primary_key=True, verbose_name='ID')
     part_number = models.ForeignKey(Catalogue, models.CASCADE, db_column='part_number')
