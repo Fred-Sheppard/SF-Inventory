@@ -9,8 +9,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls.base import reverse_lazy, reverse
 
 from app.forms import StockForm, CatalogueForm, BomItemsForm, LocationForm, BomForm, BomChecklistForm, \
-    StockFilterForm, CatalogueEditForm, UserCreateForm, CheckoutForm, BomItemsFormset
-from app.models import Stock, Catalogue, Bom, BomItems, Location, BomChecklist, CheckedOutStock, Brand
+    StockFilterForm, CatalogueEditForm, UserCreateForm, CheckoutForm, BomItemsFormset, TrackerForm
+from app.models import Stock, Catalogue, Bom, BomItems, Location, BomChecklist, CheckedOutStock, Brand, Tracker
 from app.tables import CatalogueTable, StockTable, BomItemsTable, BomChecklistTable
 
 
@@ -23,16 +23,21 @@ class Util:
         instance.save()
 
     @staticmethod
-    def form_page(request, form_type, redirect_to, context=None):
+    def form_page(request, form_type, redirect_to, redirect_args=None, context=None, instance=None, initial=None):
         if context is None:
             context = {}
+        if initial is None:
+            initial = {}
         if request.method == 'POST':
-            form = form_type(request.POST)
+            form = form_type(request.POST, instance=instance, initial=initial)
             if form.is_valid():
                 Util.save_with_user(request, form)
-                return redirect(redirect_to)
+                if redirect_args is not None:
+                    return redirect(redirect_to, redirect_args)
+                else:
+                    return redirect(redirect_to)
         else:
-            form = form_type()
+            form = form_type(instance=instance, initial=initial)
         context = context | {'form': form}
         return render(request, 'form.html', context)
 
@@ -50,7 +55,7 @@ def register(request):
         'button_text': 'Login',
         'button_url': '/accounts/login/'
     }
-    return Util.form_page(request, UserCreateForm, default, context)
+    return Util.form_page(request, UserCreateForm, default, context=context)
 
 
 def login(request):
@@ -259,21 +264,13 @@ def catalogue_entry(request, part_number):
 def catalogue_edit(request, part_number):
     catalogue_item = get_object_or_404(Catalogue, pk=part_number)
 
-    if request.method == 'POST':
-        form = CatalogueEditForm(request.POST, instance=catalogue_item)
-        if form.is_valid():
-            Util.save_with_user(request, form)
-            return redirect(catalogue_entry, part_number)
-    else:
-        form = CatalogueEditForm(instance=catalogue_item)
-
     context = {
-        'form': form,
         'heading': f'Editing {catalogue_item.part_number}',
         'button_url': f'/catalogue/{catalogue_item.part_number}',
         'button_text': 'View Item'
     }
-    return render(request, 'form.html', context)
+    return Util.form_page(request, CatalogueEditForm, catalogue_entry, context=context, redirect_args=part_number,
+                          instance=catalogue_item)
 
 
 @login_required
@@ -297,7 +294,7 @@ def location_new(request):
         'button_url': '/index',
         'button_text': 'View all Locations',
     }
-    return Util.form_page(request, LocationForm, index, context)
+    return Util.form_page(request, LocationForm, index, context=context)
 
 
 @login_required
