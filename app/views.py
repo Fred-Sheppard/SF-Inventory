@@ -157,7 +157,7 @@ def stock(request):
         else:
             raise ValueError('Invalid button name that called this post request')
     else:
-        part_number = request.GET.get('part_number')
+        part_number = request.GET.get('initial_pn')
         form = StockForm(initial={'part_number': part_number})
         filter_form = StockFilterForm()
     # If the form being posted is not valid, it will fall through here to display errors
@@ -206,8 +206,11 @@ def delete_stock(request, stock_id):
 
 @login_required
 def catalogue(request):
+    table = CatalogueTable(Catalogue.objects.all(), order_by=('brand', 'part_number')),
+    table.paginate(page=request.GET.get("page", 1), per_page=25)
     context = {
-        'table': CatalogueTable(Catalogue.objects.all(), order_by=('brand', 'part_number')),
+        'table': table,
+        # 'table': CatalogueTable(Catalogue.objects.all(), order_by=('brand', 'part_number')),
         'button_url': '/catalogue/new',
         'button_text': 'New Item',
         'heading': 'Catalogue',
@@ -223,7 +226,7 @@ def catalogue_new(request):
             Util.save_with_user(request, form)
             if form.cleaned_data['scanToStock']:
                 part_number = form.cleaned_data['part_number']
-                url = f"{reverse('stock')}?part_number={part_number}"
+                url = f"{reverse('stock')}?initial_pn={part_number}"
                 return HttpResponseRedirect(url)
             else:
                 return redirect(catalogue_new)
