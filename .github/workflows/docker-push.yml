@@ -3,7 +3,7 @@ name: Build and Push Docker Image
 on:
   push:
     tags:
-      - v*.*.*  # Matches tags starting with "v" followed by any number (.*)
+      - '*'
 
 jobs:
   build-and-push:
