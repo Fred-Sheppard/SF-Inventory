@@ -206,10 +206,7 @@ def delete_stock(request, stock_id):
 
 @login_required
 def catalogue(request):
-    # table = CatalogueTable(Catalogue.objects.all(), order_by=('brand', 'part_number')),
-    # table.paginate(page=request.GET.get("page", 1), per_page=25)
     context = {
-        # 'table': table,
         'table': CatalogueTable(Catalogue.objects.all(), order_by=('brand', 'part_number')),
         'button_url': '/catalogue/new',
         'button_text': 'New Item',
