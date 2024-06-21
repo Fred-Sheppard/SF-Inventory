@@ -162,6 +162,7 @@ def stock(request):
         filter_form = StockFilterForm()
     # If the form being posted is not valid, it will fall through here to display errors
     stock_list = filter_stock_from_parameters(request)
+    # noinspection PyTestUnpassedFixture
     context = {
         'form': form,
         'filter_form': filter_form,
