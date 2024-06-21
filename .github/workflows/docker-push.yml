@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest  # You can choose a different runner
 
     steps:
+      - uses: actions/checkout@v4
       - uses: mr-smithers-excellent/docker-build-push@v6
         name: Build & push Docker image
         with:
