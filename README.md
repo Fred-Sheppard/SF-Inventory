@@ -46,3 +46,9 @@ To start the server, simply run:
 ```bash
 docker-compose up -d
 ```
+
+### Contributing
+```bash
+docker-compose -f docker-compose_build.yml up --build -d 
+```
+
