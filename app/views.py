@@ -79,7 +79,7 @@ def login(request):
 @login_required
 def logout(request):
     django.contrib.auth.logout(request)
-    return redirect(login)
+    return HttpResponseRedirect('/login/')
 
 
 @login_required
@@ -206,11 +206,11 @@ def delete_stock(request, stock_id):
 
 @login_required
 def catalogue(request):
-    table = CatalogueTable(Catalogue.objects.all(), order_by=('brand', 'part_number')),
-    table.paginate(page=request.GET.get("page", 1), per_page=25)
+    # table = CatalogueTable(Catalogue.objects.all(), order_by=('brand', 'part_number')),
+    # table.paginate(page=request.GET.get("page", 1), per_page=25)
     context = {
-        'table': table,
-        # 'table': CatalogueTable(Catalogue.objects.all(), order_by=('brand', 'part_number')),
+        # 'table': table,
+        'table': CatalogueTable(Catalogue.objects.all(), order_by=('brand', 'part_number')),
         'button_url': '/catalogue/new',
         'button_text': 'New Item',
         'heading': 'Catalogue',
@@ -364,6 +364,5 @@ def bom_edit(request, bom_id):
             return redirect(bom_edit, bom_id)
     else:
         formset = MyFormSet(instance=bom_, form_kwargs={'bom_id': bom_id})
-        print(formset.as_table())
     labels = ['Part Number', 'Quantity']
     return render(request, 'bom_edit.html', {'boms': boms, 'my_bom': bom_, 'formset': formset, 'labels': labels})
